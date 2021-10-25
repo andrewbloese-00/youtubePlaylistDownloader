@@ -57,3 +57,8 @@ Now, after cloning the repository, navigate to the repository directory in your 
 pipenv install
 ```
 
+You will also new to have ffmpeg installed to run the audio_getter.py.
+To do this run:
+```
+brew install ffmpeg
+```
