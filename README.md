@@ -46,3 +46,14 @@ Python 3.8.10 [or later]
 
 you are all set!
 
+### 3. Set up pipenv
+Run the following in the terminal to install pipenv globaly.
+```
+sudo -H pip install -U pipenv
+```
+
+Now, after cloning the repository, navigate to the repository directory in your terminal and then enter the command: 
+```
+pipenv install
+```
+
