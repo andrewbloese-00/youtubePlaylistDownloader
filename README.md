@@ -62,3 +62,12 @@ To do this run:
 ```
 brew install ffmpeg
 ```
+
+
+### 4. Running The Script
+Enter the following command replacing <yourusername> with your username
+
+```
+/usr/local/bin/python3 /Users/<yourusername>/Development/Python/playlist_downloader/youtubePlaylistDownloader/downloader.py
+```
+
