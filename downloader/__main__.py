@@ -1,4 +1,3 @@
-from mutagen import id3
 from pytube import YouTube, Playlist
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3, APIC
@@ -8,8 +7,7 @@ import re
 import string
 import os
 
-   
-class song:
+class Song:
  def __init__(self, video_url,  title, image_url, artist):
   self.video_url = video_url
   self.title = title
@@ -27,22 +25,14 @@ class song:
   return str(self.title) + " | " + str(self.artist) 
 
 
-# on_progress_callback takes 4 parameters.
-def progress_function(self,stream, chunk,file_handle, bytes_remaining):
-    size = stream.filesize
-    p = 0
-    while p <= 100:
-        progress = p
-        print(str(p)+'%')
-        p = percent(bytes_remaining, size)
-
-
-def percent(tem, total):
-        perc = (float(tem) / float(total)) * float(100)
-        return perc
 
 def get_download_path():
         return os.path.join(os.path.expanduser('~'), 'Downloads')
+
+def get_path_to_folder(name):
+        download_path = get_download_path()
+        return download_path + "/" + name
+
 
 def sanitize_name(name):
  s = str(name)
@@ -56,17 +46,16 @@ def download_audio(song, path_to_folder):
  print("Downloading " + name + "...", end="")
  YouTube(song.video_url).streams.get_by_itag('140').download(output_path=path_to_folder, filename=name)
  print(" [COMPLETED]")
- 
 
 def convert_audio(song, mp4name, mp3name):
         cmd = "ffmpeg -i {} -vn {}".format(mp4name, mp3name)
         os.system(cmd)
         
         
-def add_details(song, filename):
+def add_details(song, filename, playlistname):
   current = EasyID3(filename=filename)
   current["artist"] = u"" + song.artist
-  current["album"] = u"" + PLAYLIST_NAME
+  current["album"] = u"" + playlistname
   current.save()
 
   response = requests.get(song.image_url, stream=True)
@@ -85,38 +74,53 @@ def add_details(song, filename):
     )
     current.save()
 
-def cleanup():
-        cmd = "cd {} && rm *.mp4".format(PATH_TO_FOLDER)
+def cleanup(name):
+        cmd = "cd {} && rm *.mp4".format(get_path_to_folder(name=name))
         os.system(cmd)
 
-if (__name__ == "__main__"):
+def main():
+ #define the download path
  DOWNLOAD_PATH = get_download_path()
- playlistURL = input("Enter your playlist's URL: ")
- playlist = Playlist(url=playlistURL)
- playlist._video_regex = re.compile(r"\"url\":\"(/watch\?v=[\w-]*)")
- songs = []
- PLAYLIST_NAME = sanitize_name(str(playlist.title))
- PATH_TO_FOLDER = DOWNLOAD_PATH + "/" + PLAYLIST_NAME
 
- print(PATH_TO_FOLDER)
- for video in playlist.videos:
-  songTitle = sanitize_name(video.title)
-  songs.append(song(video_url=video.watch_url, title=songTitle, image_url=video.thumbnail_url, artist=video.author))
-  
- for song in songs:
-  download_audio(song, PATH_TO_FOLDER)
+ #get playlist url from user – then use pytube to find the playlist
+ playlist_url = input("Enter your playlist's URL: ")
+ playlist = Playlist(url=playlist_url)
+ playlist._video_regex = re.compile(r"\"url\":\"(/watch\?v=[\w-]*)")
  
+ #create a list to store the songs in 
+ songs = []
+
+ #sanitize the name of the playlist 
+ PLAYLIST_NAME = sanitize_name(str(playlist.title))
+
+ # create a "song" object for each video in the playlist
+ for video in playlist.videos:
+  song_title = sanitize_name(video.title)
+  the_song = Song(video_url=video.watch_url, title=song_title, image_url=video.thumbnail_url, artist=video.author)
+  songs.append(the_song)
+  
+ #download the songs
+ for song in songs:
+  download_audio(song, get_path_to_folder(PLAYLIST_NAME))
+ 
+ #convert the songs to mp3
  for song in songs:
   name = str(sanitize_name(song.title))
-  mp4 = str(PATH_TO_FOLDER + "/" + str(name) + ".mp4")
-  mp3 = str(PATH_TO_FOLDER + "/" + str(name) + ".mp3")
+  mp4 = str(get_path_to_folder(PLAYLIST_NAME) + "/" + str(name) + ".mp4")
+  mp3 = str(get_path_to_folder(PLAYLIST_NAME) + "/" + str(name) + ".mp3")
   convert_audio(song, mp4, mp3)
 
- cleanup()
+ #remove the mp4 files
+ cleanup(PLAYLIST_NAME)
  
+
+ #add metadata details to the songs 
  for song in songs:
   print("ADDING DETAILS")
   name = str(sanitize_name(str(song.title))) + ".mp3"
-  path = PATH_TO_FOLDER + "/" + name
-  add_details(song, path)
+  path = get_path_to_folder(PLAYLIST_NAME) + "/" + name
+  add_details(song, path, PLAYLIST_NAME)
 
+
+if(__name__ == "__main__"):
+        main()
